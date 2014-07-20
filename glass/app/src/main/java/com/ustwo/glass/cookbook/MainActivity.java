@@ -38,13 +38,14 @@ public class MainActivity extends Activity {
 
     private static final int RECORD_VIDEO_REQUEST = 1;
     private static final int RECORD_RECIPE_TITLE_REQUEST = 2;
-    private static final int RECORD_STEP_TITLE_REQUEST = 2;
+    private static final int RECORD_STEP_TITLE_REQUEST = 3;
 
     /** {@link CardScrollView} to use as the main content view. */
     private CardScrollView mCardScroller;
     private List<View> mViews = new ArrayList<View>();
 
     private Recipe mRecipe;
+    private String mStepTitle;
 
     @Override
     protected void onCreate(Bundle bundle) {
@@ -55,8 +56,8 @@ public class MainActivity extends Activity {
         mRecipe = new Recipe("Untitled");
 //        mRecipe.addStep(new Recipe.Step("Test", "1.mp4"));
 
-        mViews.add(createCard("Name recipe"));
-        mViews.add(createCard("Create step"));
+        mViews.add(createCard("Name your recipe"));
+        mViews.add(createCard("Create a step"));
         mViews.add(createCard("Publish"));
 
         mCardScroller = new CardScrollView(this);
@@ -88,11 +89,11 @@ public class MainActivity extends Activity {
                 switch (position) {
                     case 0:
                         // Record recipe title.
-                        recordSpeech(RECORD_RECIPE_TITLE_REQUEST);
+                        recordSpeech(RECORD_RECIPE_TITLE_REQUEST, null);
                         break;
                     case 1:
                         // Record a step.
-                        recordVideo();
+                        recordSpeech(RECORD_STEP_TITLE_REQUEST, "What is the step title?");
                         break;
                     case 2:
                         // Publish.
@@ -124,15 +125,22 @@ public class MainActivity extends Activity {
             if (resultCode == RESULT_OK) {
                 String videoPath = data.getStringExtra(
                         CameraManager.EXTRA_VIDEO_FILE_PATH);
-                int stepCount = mRecipe.getNumSteps() + 1;
-                mRecipe.addStep(new Recipe.Step("Step " + stepCount, videoPath));
+                mRecipe.addStep(new Recipe.Step(mStepTitle, videoPath));
             } else {
                 // Video record cancelled.
             }
         } else if (requestCode == RECORD_RECIPE_TITLE_REQUEST) {
             if (resultCode == RESULT_OK) {
                 List<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-                setRecipeTitle(results);
+                mRecipe.setTitle(parseVoiceResults(results));
+            } else {
+                // Record speech cancelled.
+            }
+        } else if (requestCode == RECORD_STEP_TITLE_REQUEST) {
+            if (resultCode == RESULT_OK) {
+                List<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                mStepTitle = parseVoiceResults(results);
+                recordVideo();
             } else {
                 // Record speech cancelled.
             }
@@ -148,8 +156,11 @@ public class MainActivity extends Activity {
         return card.getView();
     }
 
-    private void recordSpeech(int type) {
+    private void recordSpeech(int type, String prompt) {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        if (prompt != null) {
+            intent.putExtra(RecognizerIntent.EXTRA_PROMPT, prompt);
+        }
         startActivityForResult(intent, type);
     }
 
@@ -158,15 +169,15 @@ public class MainActivity extends Activity {
         startActivityForResult(intent, RECORD_VIDEO_REQUEST);
     }
 
-    private void setRecipeTitle(List<String> recipeTitleResults) {
+    private String parseVoiceResults(List<String> results) {
         StringBuffer buffer = new StringBuffer();
-        for (int i=0; i<recipeTitleResults.size(); i++) {
-            buffer.append(recipeTitleResults.get(i));
-            if (i < recipeTitleResults.size() - 1) {
+        for (int i=0; i<results.size(); i++) {
+            buffer.append(results.get(i));
+            if (i < results.size() - 1) {
                 buffer.append(" ");
             }
         }
-        mRecipe.setTitle(buffer.toString());
+        return buffer.toString();
     }
 
     private boolean publish(Recipe recipe) {
