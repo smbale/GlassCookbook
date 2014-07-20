@@ -234,7 +234,7 @@ public class MainActivity extends Activity {
             buffer.append(getString(R.string.step_template, step.mTitle, step.mVideo));
         }
 
-        String html = getString(R.string.recipe_template, mRecipe.getTitle(), buffer.toString());
+//        String html = getString(R.string.recipe_template, mRecipe.getTitle(), buffer.toString());
         return writeFile(HTML_OUTPUT_PATH, html);
     }
 
@@ -282,7 +282,7 @@ public class MainActivity extends Activity {
                     footer.setText("");
                 }
                 mPublishProgress++;
-                mHandler.postDelayed(mProgressRunnable, mPublishProgress <= PROGRESS_LABELS.length ? 1000 : 1500);
+                mHandler.postDelayed(mProgressRunnable, mPublishProgress <= PROGRESS_LABELS.length ? 750 : 1000);
                 mCardScroller.getAdapter().notifyDataSetInvalidated();
             } else {
                 finish();

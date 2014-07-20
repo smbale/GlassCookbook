@@ -20,8 +20,8 @@
 
         <ImageView
             android:id="@+id/icon"
-            android:layout_width="50px"
-            android:layout_height="50px"
+            android:layout_width="75px"
+            android:layout_height="75px"
             android:paddingRight="10px"/>
         <TextView
             android:id="@+id/body"
