@@ -57,9 +57,9 @@ public class MainActivity extends Activity {
         mRecipe = new Recipe("Untitled");
 //        mRecipe.addStep(new Recipe.Step("Test", "1.mp4"));
 
-        mViews.add(createCard("Name your recipe"));
-        mViews.add(createCard("Create a step"));
-        mViews.add(createCard("Publish"));
+        mViews.add(createCard("Name your recipe", mRecipe.getTitle()));
+        mViews.add(createCard("Create step 1", null));
+        mViews.add(createCard("Publish", null));
 
         mCardScroller = new CardScrollView(this);
         mCardScroller.setAdapter(new CardScrollAdapter() {
@@ -90,7 +90,7 @@ public class MainActivity extends Activity {
                 switch (position) {
                     case 0:
                         // Record recipe title.
-                        recordSpeech(RECORD_RECIPE_TITLE_REQUEST, null);
+                        recordSpeech(RECORD_RECIPE_TITLE_REQUEST, "What is the recipe name?");
                         break;
                     case 1:
                         // Record a step.
@@ -127,6 +127,7 @@ public class MainActivity extends Activity {
                 String videoPath = data.getStringExtra(
                         CameraManager.EXTRA_VIDEO_FILE_PATH);
                 mRecipe.addStep(new Recipe.Step(mStepTitle, videoPath));
+                updateStepCard();
             } else {
                 // Video record cancelled.
             }
@@ -134,6 +135,7 @@ public class MainActivity extends Activity {
             if (resultCode == RESULT_OK) {
                 List<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                 mRecipe.setTitle(parseVoiceResults(results));
+                updateRecipeTitleCard();
             } else {
                 // Record speech cancelled.
             }
@@ -151,10 +153,25 @@ public class MainActivity extends Activity {
     /**
      * Builds a Glass styled "Hello World!" view using the {@link Card} class.
      */
-    private View createCard(String title) {
+    private View createCard(String title, String footer) {
         Card card = new Card(this);
         card.setText(title);
+        if (footer != null) {
+            card.setFootnote(footer);
+        }
         return card.getView();
+    }
+
+    private void updateStepCard() {
+        mViews.remove(1);
+        mViews.add(1, createCard("Create step " + (1 + mRecipe.getNumSteps()), null));
+        mCardScroller.getAdapter().notifyDataSetInvalidated();
+    }
+
+    private void updateRecipeTitleCard() {
+        mViews.remove(0);
+        mViews.add(0, createCard("Name your recipe", mRecipe.getTitle()));
+        mCardScroller.getAdapter().notifyDataSetInvalidated();
     }
 
     private void recordSpeech(int type, String prompt) {
@@ -178,6 +195,9 @@ public class MainActivity extends Activity {
                 buffer.append(" ");
             }
         }
+
+        buffer.replace(0, 1, String.valueOf(buffer.charAt(0)).toUpperCase());
+
         return buffer.toString();
     }
 
