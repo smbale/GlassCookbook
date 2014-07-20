@@ -1,3 +1,0 @@
-GlassCookbook
-=============
-Hungy hungry Shippo
