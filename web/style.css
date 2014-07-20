@@ -1,6 +1,40 @@
 body
 {
 text-align: center;
-font-family: "Helvetica Neue";
-background-color: #C0C0C0;
+background-image:url('background.jpg');
+background-repeat:repeat-y;
+}
+
+H1
+{
+font-family: "Goudy Old Style";
+font-size:250%;
+background-color: #FFFFFF;
+margin-left: auto;
+margin-right: auto;
+width: 70%;
+}
+
+H2
+{
+font-family: "Goudy Old Style";
+font-size:180%;
+text-align: left;
+background-color: #FFFFFF;
+margin-left: auto;
+margin-right: auto;
+width: 70%;
+display:inline;
+padding:10px;
+}
+
+p
+{
+font-family: "Goudy Old Style";
+font-size:120%;
+text-align: left;
+background-color: #FFFFFF;
+margin-left: auto;
+margin-right: auto;
+width: 70%;
 }
