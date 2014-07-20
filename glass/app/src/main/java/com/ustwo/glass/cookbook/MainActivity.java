@@ -5,9 +5,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.TextView;
 
 import com.google.android.glass.app.Card;
 import com.google.android.glass.media.CameraManager;
@@ -55,8 +57,6 @@ public class MainActivity extends Activity {
         Slog.init(getApplicationContext());
 
         mRecipe = new Recipe("Untitled");
-//        mRecipe.addStep(new Recipe.Step("Test", "1.mp4"));
-
         mViews.add(createCard("Name your recipe", mRecipe.getTitle()));
         mViews.add(createCard("Create step 1", null));
         mViews.add(createCard("Publish", null));
@@ -154,12 +154,12 @@ public class MainActivity extends Activity {
      * Builds a Glass styled "Hello World!" view using the {@link Card} class.
      */
     private View createCard(String title, String footer) {
-        Card card = new Card(this);
-        card.setText(title);
+        View view = LayoutInflater.from(this).inflate(R.layout.card, null);
+        ((TextView) view.findViewById(R.id.body)).setText(title);
         if (footer != null) {
-            card.setFootnote(footer);
+            ((TextView) view.findViewById(R.id.footer)).setText(footer);
         }
-        return card.getView();
+        return view;
     }
 
     private void updateStepCard() {

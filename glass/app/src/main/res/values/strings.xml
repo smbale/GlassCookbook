@@ -15,7 +15,7 @@
                 </head>
                 <body>
                     <H1>The Glass Cookbook</H1>
-                    <H2>%1$s</H2>
+                    <div class="recipe_title">%1$s</div>
                     %2$s
                 </body>
 
@@ -26,7 +26,7 @@
     <string name="step_template" formatted="false">
         <![CDATA[
             </p>
-                %1$s<br/>
+                <div class="step_title">%1$s</div>
                 <video width="480" height="320" controls>
                     <source src="%2$s" type="video/mp4">
                 </video>
