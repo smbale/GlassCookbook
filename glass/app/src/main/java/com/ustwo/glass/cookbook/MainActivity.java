@@ -49,7 +49,7 @@ public class MainActivity extends Activity {
     private static final int RECORD_RECIPE_TITLE_REQUEST = 2;
     private static final int RECORD_STEP_TITLE_REQUEST = 3;
 
-    private String[] PROGRESS_LABELS = {".    ", ". .  ", ". . ."};
+    private String[] PROGRESS_LABELS = {"■      ", "■  ■   ", "■  ■  ■"};
 
     /** {@link CardScrollView} to use as the main content view. */
     private CardScrollView mCardScroller;
@@ -282,7 +282,7 @@ public class MainActivity extends Activity {
                     footer.setText("");
                 }
                 mPublishProgress++;
-                mHandler.postDelayed(mProgressRunnable, 1000);
+                mHandler.postDelayed(mProgressRunnable, mPublishProgress <= PROGRESS_LABELS.length ? 1000 : 1500);
                 mCardScroller.getAdapter().notifyDataSetInvalidated();
             } else {
                 finish();
