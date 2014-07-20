@@ -3,7 +3,6 @@ package com.ustwo.glass.cookbook;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.FileObserver;
 import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
 import android.view.View;
@@ -14,9 +13,12 @@ import com.google.android.glass.app.Card;
 import com.google.android.glass.media.CameraManager;
 import com.google.android.glass.widget.CardScrollAdapter;
 import com.google.android.glass.widget.CardScrollView;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.ustwo.util.Slog;
 
-import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,19 +33,27 @@ import java.util.List;
  */
 public class MainActivity extends Activity {
 
+    // /storage/emulated/0/DCIM/Camera
+    private static final String OUTPUT_PATH = "/storage/emulated/0/DCIM/Camera/recipe.json";
+
     private static final int RECORD_VIDEO_REQUEST = 1;
-    private static final int RECORD_SPEECH_REQUEST = 2;
+    private static final int RECORD_RECIPE_TITLE_REQUEST = 2;
+    private static final int RECORD_STEP_TITLE_REQUEST = 2;
 
     /** {@link CardScrollView} to use as the main content view. */
     private CardScrollView mCardScroller;
-
     private List<View> mViews = new ArrayList<View>();
+
+    private Recipe mRecipe;
 
     @Override
     protected void onCreate(Bundle bundle) {
         super.onCreate(bundle);
 
         Slog.init(getApplicationContext());
+
+        mRecipe = new Recipe("Untitled");
+//        mRecipe.addStep(new Recipe.Step("Test", "1.mp4"));
 
         mViews.add(createCard("Name recipe"));
         mViews.add(createCard("Create step"));
@@ -77,8 +87,8 @@ public class MainActivity extends Activity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 switch (position) {
                     case 0:
-                        // Record speech.
-                        recordSpeech();
+                        // Record recipe title.
+                        recordSpeech(RECORD_RECIPE_TITLE_REQUEST);
                         break;
                     case 1:
                         // Record a step.
@@ -86,6 +96,9 @@ public class MainActivity extends Activity {
                         break;
                     case 2:
                         // Publish.
+                        if (mRecipe.getNumSteps() > 0) {
+                            publish(mRecipe);
+                        }
                         break;
                 }
             }
@@ -105,6 +118,27 @@ public class MainActivity extends Activity {
         super.onPause();
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == RECORD_VIDEO_REQUEST) {
+            if (resultCode == RESULT_OK) {
+                String videoPath = data.getStringExtra(
+                        CameraManager.EXTRA_VIDEO_FILE_PATH);
+                int stepCount = mRecipe.getNumSteps() + 1;
+                mRecipe.addStep(new Recipe.Step("Step " + stepCount, videoPath));
+            } else {
+                // Video record cancelled.
+            }
+        } else if (requestCode == RECORD_RECIPE_TITLE_REQUEST) {
+            if (resultCode == RESULT_OK) {
+                List<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                setRecipeTitle(results);
+            } else {
+                // Record speech cancelled.
+            }
+        }
+    }
+
     /**
      * Builds a Glass styled "Hello World!" view using the {@link Card} class.
      */
@@ -114,9 +148,9 @@ public class MainActivity extends Activity {
         return card.getView();
     }
 
-    private void recordSpeech() {
+    private void recordSpeech(int type) {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        startActivityForResult(intent, RECORD_SPEECH_REQUEST);
+        startActivityForResult(intent, type);
     }
 
     private void recordVideo() {
@@ -124,71 +158,34 @@ public class MainActivity extends Activity {
         startActivityForResult(intent, RECORD_VIDEO_REQUEST);
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == RECORD_VIDEO_REQUEST) {
-            if (resultCode == RESULT_OK) {
-                String picturePath = data.getStringExtra(
-                        CameraManager.EXTRA_VIDEO_FILE_PATH);
-                processPictureWhenReady(picturePath);
-            } else {
-                // Video record cancelled.
-            }
-        } else if (requestCode == RECORD_SPEECH_REQUEST) {
-            if (resultCode == RESULT_OK) {
-                List<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-                for (String result : results) {
-                    Slog.d("Speech result: " + result);
-                }
-            } else {
-                // Record speech cancelled.
+    private void setRecipeTitle(List<String> recipeTitleResults) {
+        StringBuffer buffer = new StringBuffer();
+        for (int i=0; i<recipeTitleResults.size(); i++) {
+            buffer.append(recipeTitleResults.get(i));
+            if (i < recipeTitleResults.size() - 1) {
+                buffer.append(" ");
             }
         }
+        mRecipe.setTitle(buffer.toString());
     }
 
-    private void processPictureWhenReady(final String filePath) {
-        final File videoFile = new File(filePath);
-
-        if (videoFile.exists()) {
-            // The picture is ready; process it.
-            Slog.d("I TOOK A VID: " + videoFile.getAbsolutePath());
-        } else {
-            // The file does not exist yet. Before starting the file observer, you
-            // can update your UI to let the user know that the application is
-            // waiting for the picture (for example, by displaying the thumbnail
-            // image and a progress indicator).
-
-            final File parentDirectory = videoFile.getParentFile();
-            FileObserver observer = new FileObserver(parentDirectory.getPath(),
-                    FileObserver.CLOSE_WRITE | FileObserver.MOVED_TO) {
-                // Protect against additional pending events after CLOSE_WRITE
-                // or MOVED_TO is handled.
-                private boolean isFileWritten;
-
-                @Override
-                public void onEvent(int event, String path) {
-                    if (!isFileWritten) {
-                        // For safety, make sure that the file that was created in
-                        // the directory is actually the one that we're expecting.
-                        File affectedFile = new File(parentDirectory, path);
-                        isFileWritten = affectedFile.equals(videoFile);
-
-                        if (isFileWritten) {
-                            stopWatching();
-
-                            // Now that the file is ready, recursively call
-                            // processPictureWhenReady again (on the UI thread).
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    processPictureWhenReady(filePath);
-                                }
-                            });
-                        }
-                    }
-                }
-            };
-            observer.startWatching();
+    private boolean publish(Recipe recipe) {
+        boolean result = true;
+        OutputStreamWriter writer = null;
+        try {
+            Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+            writer = new OutputStreamWriter(new FileOutputStream(OUTPUT_PATH));
+            writer.write(gson.toJson(mRecipe));
         }
+        catch (Exception e) {
+            result = false;
+            Slog.e("Failed to publish to: " + OUTPUT_PATH, e);
+        }
+        finally {
+            try {
+                writer.close();
+            } catch (Exception e) {}
+        }
+        return result;
     }
 }
