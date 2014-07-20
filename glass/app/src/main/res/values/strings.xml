@@ -5,4 +5,33 @@
     <string name="title_activity_main">Cookbook</string>
     <string name="hello_world">Hello world!</string>
 
+    <string name="recipe_template" formateed="false">
+        <![CDATA[
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>The Glass Cookbook</title>
+                    <link rel="stylesheet" type="text/css" href="style.css">
+                </head>
+                <body>
+                    <H1>The Glass Cookbook</H1>
+                    <H2>%1$s</H2>
+                    %2$s
+                </body>
+
+            </html>
+        ]]>
+    </string>
+
+    <string name="step_template" formatted="false">
+        <![CDATA[
+            </p>
+                %1$s<br/>
+                <video width="480" height="320" controls>
+                    <source src="%2$s" type="video/mp4">
+                </video>
+            </p>
+        ]]>
+    </string>
+
 </resources>

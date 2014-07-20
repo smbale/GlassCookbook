@@ -25,11 +25,19 @@ public class Recipe {
         mTitle = title;
     }
 
+    public List<Step> getSteps() {
+       return mSteps;
+    }
+
+    public String getTitle() {
+        return mTitle;
+    }
+
     public static class Step {
         @Expose @SerializedName("title")
-        private String mTitle;
+        public String mTitle;
         @Expose @SerializedName("video")
-        private String mVideo;
+        public String mVideo;
 
         public Step(String title, String video) {
             mTitle = title;

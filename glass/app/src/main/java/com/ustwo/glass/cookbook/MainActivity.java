@@ -34,7 +34,8 @@ import java.util.List;
 public class MainActivity extends Activity {
 
     // /storage/emulated/0/DCIM/Camera
-    private static final String OUTPUT_PATH = "/storage/emulated/0/DCIM/Camera/recipe.json";
+    private static final String JSON_OUTPUT_PATH = "/storage/emulated/0/DCIM/Camera/recipe.json";
+    private static final String HTML_OUTPUT_PATH = "/storage/emulated/0/DCIM/Camera/index.html";
 
     private static final int RECORD_VIDEO_REQUEST = 1;
     private static final int RECORD_RECIPE_TITLE_REQUEST = 2;
@@ -98,7 +99,7 @@ public class MainActivity extends Activity {
                     case 2:
                         // Publish.
                         if (mRecipe.getNumSteps() > 0) {
-                            publish(mRecipe);
+                            publishHTML(mRecipe);
                         }
                         break;
                 }
@@ -139,7 +140,7 @@ public class MainActivity extends Activity {
         } else if (requestCode == RECORD_STEP_TITLE_REQUEST) {
             if (resultCode == RESULT_OK) {
                 List<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-                mStepTitle = parseVoiceResults(results);
+                mStepTitle = "Step " + (mRecipe.getNumSteps() + 1) + ": " + parseVoiceResults(results);
                 recordVideo();
             } else {
                 // Record speech cancelled.
@@ -180,17 +181,31 @@ public class MainActivity extends Activity {
         return buffer.toString();
     }
 
-    private boolean publish(Recipe recipe) {
+    private boolean publishJSON(Recipe recipe) {
+        Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+        return writeFile(JSON_OUTPUT_PATH, gson.toJson(mRecipe));
+    }
+
+    private boolean publishHTML(Recipe recipe) {
+        StringBuffer buffer = new StringBuffer();
+        for (Recipe.Step step : recipe.getSteps()) {
+            buffer.append(getString(R.string.step_template, step.mTitle, step.mVideo));
+        }
+
+        String html = getString(R.string.recipe_template, mRecipe.getTitle(), buffer.toString());
+        return writeFile(HTML_OUTPUT_PATH, html);
+    }
+
+    private boolean writeFile(String path, String data) {
         boolean result = true;
         OutputStreamWriter writer = null;
         try {
-            Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-            writer = new OutputStreamWriter(new FileOutputStream(OUTPUT_PATH));
-            writer.write(gson.toJson(mRecipe));
+            writer = new OutputStreamWriter(new FileOutputStream(path));
+            writer.write(data);
         }
         catch (Exception e) {
             result = false;
-            Slog.e("Failed to publish to: " + OUTPUT_PATH, e);
+            Slog.e("Failed to publish to: " + path, e);
         }
         finally {
             try {
