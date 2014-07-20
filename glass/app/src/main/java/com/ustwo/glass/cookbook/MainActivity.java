@@ -25,6 +25,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * An {@link Activity} showing a tuggable "Hello World!" card.
@@ -49,7 +50,7 @@ public class MainActivity extends Activity {
     private static final int RECORD_RECIPE_TITLE_REQUEST = 2;
     private static final int RECORD_STEP_TITLE_REQUEST = 3;
 
-    private String[] PROGRESS_LABELS = {"■      ", "■  ■   ", "■  ■  ■"};
+    private String[] PROGRESS_LABELS = {"       ", "■      ", "■  ■   ", "■  ■  ■"};
 
     /** {@link CardScrollView} to use as the main content view. */
     private CardScrollView mCardScroller;
@@ -157,7 +158,7 @@ public class MainActivity extends Activity {
         } else if (requestCode == RECORD_RECIPE_TITLE_REQUEST) {
             if (resultCode == RESULT_OK) {
                 List<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-                mRecipe.setTitle(parseVoiceResults(results));
+                mRecipe.setTitle(parseVoiceResults(results, true));
                 updateRecipeTitleCard();
             } else {
                 // Record speech cancelled.
@@ -165,7 +166,7 @@ public class MainActivity extends Activity {
         } else if (requestCode == RECORD_STEP_TITLE_REQUEST) {
             if (resultCode == RESULT_OK) {
                 List<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-                mStepTitle = "Step " + (mRecipe.getNumSteps() + 1) + ": " + parseVoiceResults(results);
+                mStepTitle = "Step " + (mRecipe.getNumSteps() + 1) + ": " + parseVoiceResults(results, false);
                 recordVideo();
             } else {
                 // Record speech cancelled.
@@ -209,7 +210,7 @@ public class MainActivity extends Activity {
         startActivityForResult(intent, RECORD_VIDEO_REQUEST);
     }
 
-    private String parseVoiceResults(List<String> results) {
+    private String parseVoiceResults(List<String> results, boolean titleCase) {
         StringBuffer buffer = new StringBuffer();
         for (int i=0; i<results.size(); i++) {
             buffer.append(results.get(i));
@@ -218,9 +219,21 @@ public class MainActivity extends Activity {
             }
         }
 
-        buffer.replace(0, 1, String.valueOf(buffer.charAt(0)).toUpperCase());
+        StringTokenizer tokenizer = new StringTokenizer(buffer.toString(), " ");
 
-        return buffer.toString();
+        if (titleCase) {
+            StringBuffer titleBuffer = new StringBuffer();
+
+            while (tokenizer.hasMoreTokens()) {
+                StringBuffer wordBuffer = new StringBuffer(tokenizer.nextToken());
+                wordBuffer.replace(0, 1, String.valueOf(wordBuffer.charAt(0)).toUpperCase());
+                titleBuffer.append(wordBuffer.toString());
+                titleBuffer.append(" ");
+            }
+            return titleBuffer.toString().trim();
+        } else {
+            return buffer.replace(0, 1, String.valueOf(buffer.charAt(0)).toUpperCase()).toString();
+        }
     }
 
     private boolean publishJSON(Recipe recipe) {
