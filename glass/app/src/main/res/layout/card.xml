@@ -6,28 +6,33 @@
              android:layout_height="match_parent"
     >
 
-    <RelativeLayout
+    <LinearLayout
         android:id="@+id/body_layout"
         android:layout_width="match_parent"
         android:layout_height="@dimen/glass_card_body_height"
         android:layout_marginLeft="@dimen/glass_card_margin"
         android:layout_marginTop="@dimen/glass_card_margin"
         android:layout_marginRight="@dimen/glass_card_margin"
+        android:orientation="horizontal"
+        android:gravity="center"
         tools:ignore="UselessLeaf"
         >
 
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="50px"
+            android:layout_height="50px"
+            android:paddingRight="10px"/>
         <TextView
             android:id="@+id/body"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:ellipsize="end"
             android:singleLine="true"
-            android:layout_centerInParent="true"
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="Text"/>
 
-    </RelativeLayout>
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/footer_container"

@@ -10,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.glass.app.Card;
@@ -70,8 +71,8 @@ public class MainActivity extends Activity {
 
         mRecipe = new Recipe("Untitled");
 
-        mViews.add(createCard("Name your recipe", mRecipe.getTitle()));
-        mViews.add(createCard("Create step 1", null));
+        mViews.add(createCard("Name recipe", mRecipe.getTitle(), R.drawable.icn_pencil));
+        mViews.add(createCard("Create step 1", null, R.drawable.icn_capture));
 
         mCardScroller = new CardScrollView(this);
         mCardScroller.setAdapter(new CardScrollAdapter() {
@@ -147,7 +148,7 @@ public class MainActivity extends Activity {
                 updateStepCard();
 
                 if (mRecipe.getNumSteps() == 1) {
-                    mViews.add(createCard("Publish", null));
+                    mViews.add(createCard("Publish", null, R.drawable.icn_publish));
                     mCardScroller.getAdapter().notifyDataSetInvalidated();
                 }
             } else {
@@ -175,9 +176,10 @@ public class MainActivity extends Activity {
     /**
      * Builds a Glass styled "Hello World!" view using the {@link Card} class.
      */
-    private View createCard(String title, String footer) {
+    private View createCard(String title, String footer, int iconId) {
         View view = LayoutInflater.from(this).inflate(R.layout.card, null);
         ((TextView) view.findViewById(R.id.body)).setText(title);
+        ((ImageView) view.findViewById(R.id.icon)).setImageResource(iconId);
         if (footer != null) {
             ((TextView) view.findViewById(R.id.footer)).setText(footer);
         }
