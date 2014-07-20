@@ -3,6 +3,7 @@ package com.ustwo.glass.cookbook;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
 import android.view.LayoutInflater;
@@ -35,6 +36,10 @@ import java.util.List;
  */
 public class MainActivity extends Activity {
 
+    // TODO:
+    // CREATE option icons
+    // SHOW published + finish
+
     // /storage/emulated/0/DCIM/Camera
     private static final String JSON_OUTPUT_PATH = "/storage/emulated/0/DCIM/Camera/recipe.json";
     private static final String HTML_OUTPUT_PATH = "/storage/emulated/0/DCIM/Camera/index.html";
@@ -43,12 +48,19 @@ public class MainActivity extends Activity {
     private static final int RECORD_RECIPE_TITLE_REQUEST = 2;
     private static final int RECORD_STEP_TITLE_REQUEST = 3;
 
+    private String[] PROGRESS_LABELS = {".    ", ". .  ", ". . ."};
+
     /** {@link CardScrollView} to use as the main content view. */
     private CardScrollView mCardScroller;
     private List<View> mViews = new ArrayList<View>();
 
     private Recipe mRecipe;
     private String mStepTitle;
+
+    private boolean mPublishing;
+    private int mPublishProgress;
+
+    private Handler mHandler = new Handler();
 
     @Override
     protected void onCreate(Bundle bundle) {
@@ -57,9 +69,9 @@ public class MainActivity extends Activity {
         Slog.init(getApplicationContext());
 
         mRecipe = new Recipe("Untitled");
+
         mViews.add(createCard("Name your recipe", mRecipe.getTitle()));
         mViews.add(createCard("Create step 1", null));
-        mViews.add(createCard("Publish", null));
 
         mCardScroller = new CardScrollView(this);
         mCardScroller.setAdapter(new CardScrollAdapter() {
@@ -87,6 +99,10 @@ public class MainActivity extends Activity {
         mCardScroller.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                if (mPublishing) {
+                    return;
+                }
+
                 switch (position) {
                     case 0:
                         // Record recipe title.
@@ -100,6 +116,7 @@ public class MainActivity extends Activity {
                         // Publish.
                         if (mRecipe.getNumSteps() > 0) {
                             publishHTML(mRecipe);
+                            animateAndExit();
                         }
                         break;
                 }
@@ -128,6 +145,11 @@ public class MainActivity extends Activity {
                         CameraManager.EXTRA_VIDEO_FILE_PATH);
                 mRecipe.addStep(new Recipe.Step(mStepTitle, videoPath));
                 updateStepCard();
+
+                if (mRecipe.getNumSteps() == 1) {
+                    mViews.add(createCard("Publish", null));
+                    mCardScroller.getAdapter().notifyDataSetInvalidated();
+                }
             } else {
                 // Video record cancelled.
             }
@@ -163,14 +185,12 @@ public class MainActivity extends Activity {
     }
 
     private void updateStepCard() {
-        mViews.remove(1);
-        mViews.add(1, createCard("Create step " + (1 + mRecipe.getNumSteps()), null));
+        ((TextView) mViews.get(1).findViewById(R.id.body)).setText("Create step " + (1 + mRecipe.getNumSteps()));
         mCardScroller.getAdapter().notifyDataSetInvalidated();
     }
 
     private void updateRecipeTitleCard() {
-        mViews.remove(0);
-        mViews.add(0, createCard("Name your recipe", mRecipe.getTitle()));
+        ((TextView) mViews.get(0).findViewById(R.id.footer)).setText(mRecipe.getTitle());
         mCardScroller.getAdapter().notifyDataSetInvalidated();
     }
 
@@ -234,4 +254,37 @@ public class MainActivity extends Activity {
         }
         return result;
     }
+
+    private void animateAndExit() {
+        // Remove the creation views.
+        mViews.remove(0);
+        mViews.remove(0);
+        // Disable input.
+        mPublishing = true;
+        ((TextView) mViews.get(0).findViewById(R.id.body)).setText("Publishing");
+        mCardScroller.getAdapter().notifyDataSetInvalidated();
+
+        mProgressRunnable.run();
+    }
+
+    private Runnable mProgressRunnable = new Runnable() {
+        @Override
+        public void run() {
+            TextView footer = (TextView) mViews.get(0).findViewById(R.id.footer);
+
+            if (mPublishProgress <= PROGRESS_LABELS.length) {
+                if (mPublishProgress < PROGRESS_LABELS.length) {
+                    footer.setText(PROGRESS_LABELS[mPublishProgress]);
+                } else {
+                    ((TextView) mViews.get(0).findViewById(R.id.body)).setText("Published");
+                    footer.setText("");
+                }
+                mPublishProgress++;
+                mHandler.postDelayed(mProgressRunnable, 1000);
+                mCardScroller.getAdapter().notifyDataSetInvalidated();
+            } else {
+                finish();
+            }
+        }
+    };
 }
