@@ -234,7 +234,7 @@ public class MainActivity extends Activity {
             buffer.append(getString(R.string.step_template, step.mTitle, step.mVideo));
         }
 
-//        String html = getString(R.string.recipe_template, mRecipe.getTitle(), buffer.toString());
+        String html = getString(R.string.recipe_template, mRecipe.getTitle(), buffer.toString());
         return writeFile(HTML_OUTPUT_PATH, html);
     }
 
